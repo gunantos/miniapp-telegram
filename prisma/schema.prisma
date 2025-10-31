@@ -1,15 +1,12 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -21,7 +18,7 @@ model User {
   updatedAt DateTime @updatedAt
   
   // Telegram specific fields
-  telegramId    Int?     @unique
+  telegramId    BigInt?     @unique
   telegramUsername String?
   telegramFirstName String?
   telegramLastName  String?
@@ -34,6 +31,9 @@ model User {
   preferences  UserPreference?
   videoLikes   VideoLike[]
   comments     Comment[]
+  userPackages UserPackage[]  // Tambahkan relasi ini
+  payments     Payment[]      // Tambahkan relasi ini
+  transactions Transaction[]  // Tambahkan relasi ini
   
   @@map("users")
 }
@@ -147,6 +147,81 @@ model Comment {
   replies   Comment[] @relation("CommentReplies")
   
   @@map("comments")
+}
+
+model UserPackage {
+  id          String   @id @default(cuid())
+  userId      String
+  packageName String   // VIP, PREMIUM, BASIC, etc.
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments    Payment[]
+  
+  @@map("user_packages")
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  userId        String
+  userPackageId String?
+  amount        Float
+  currency      String   @default("IDR")
+  paymentMethod String   // GOPAY, OVO, DANA, BANK_TRANSFER, etc.
+  paymentStatus PaymentStatus @default(PENDING)
+  transactionId String?  // Payment gateway transaction ID
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userPackage   UserPackage? @relation(fields: [userPackageId], references: [id])
+  
+  @@map("payments")
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  userId      String
+  type        TransactionType
+  amount      Float
+  currency    String   @default("IDR")
+  description String?
+  status      TransactionStatus @default(COMPLETED)
+  referenceId String?  // ID referensi (misal payment ID)
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("transactions")
+}
+
+// Enum baru
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum TransactionType {
+  PURCHASE_PACKAGE
+  TOPUP
+  REFUND
+  BONUS
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
 }
 
 enum VideoStatus {
