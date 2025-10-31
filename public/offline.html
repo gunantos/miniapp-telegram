@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamApp - Offline</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 400px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    h1 {
+      font-size: 28px;
+      margin-bottom: 16px;
+      font-weight: 700;
+    }
+    
+    p {
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      opacity: 0.9;
+    }
+    
+    .retry-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .retry-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+    
+    .cached-content {
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .cached-content h3 {
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+    
+    .content-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+    }
+    
+    .content-item {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .content-item::before {
+      content: "🎬";
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📱</div>
+    <h1>You're Offline</h1>
+    <p>Don't worry! You can still enjoy some content that has been cached for offline viewing.</p>
+    
+    <button class="retry-btn" onclick="window.location.reload()">
+      Try Again
+    </button>
+    
+    <div class="cached-content">
+      <h3>Available Offline</h3>
+      <div class="content-list" id="cachedContent">
+        <div class="content-item">Loading cached content...</div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Load cached content from IndexedDB or localStorage
+    function loadCachedContent() {
+      const cachedContent = document.getElementById('cachedContent');
+      
+      // Simulate cached content (in real app, this would come from IndexedDB)
+      const mockContent = [
+        { title: "Drama Pendek: Cinta Pertama", duration: "15:30" },
+        { title: "Film: Petualangan Seru", duration: "1:45:00" },
+        { title: "Serial: Episode 1", duration: "22:15" }
+      ];
+      
+      if (mockContent.length > 0) {
+        cachedContent.innerHTML = mockContent.map(item => 
+          `<div class="content-item">
+            <div>
+              <div style="font-weight: 600;">${item.title}</div>
+              <div style="font-size: 12px; opacity: 0.7;">${item.duration}</div>
+            </div>
+          </div>`
+        ).join('');
+      } else {
+        cachedContent.innerHTML = '<div class="content-item">No cached content available</div>';
+      }
+    }
+    
+    // Load cached content when page loads
+    document.addEventListener('DOMContentLoaded', loadCachedContent);
+    
+    // Check for online status periodically
+    setInterval(() => {
+      if (navigator.onLine) {
+        window.location.reload();
+      }
+    }, 5000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String?  @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Telegram specific fields
+  telegramId    Int?     @unique
+  telegramUsername String?
+  telegramFirstName String?
+  telegramLastName  String?
+  telegramIsBot    Boolean  @default(false)
+  telegramLanguageCode String?
+  telegramPhotoUrl String?
+  
+  // Relations
+  watchHistory  WatchHistory[]
+  preferences  UserPreference?
+  videoLikes   VideoLike[]
+  comments     Comment[]
+  
+  @@map("users")
+}
+
+model Video {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  thumbnailId String?
+  thumbnailUrl String?
+  status      VideoStatus @default(DRAFT)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  viewCount   Int      @default(0)
+  category    VideoCategory
+  videoSource VideoSource
+  videoUrl    String?
+  telegramFileId String?
+  lastChecked DateTime?
+  isActive    Boolean  @default(true)
+  
+  // Relations
+  serialParts SerialPart[]
+  watchHistory WatchHistory[]
+  videoLikes VideoLike[]
+  comments Comment[]
+  
+  @@map("videos")
+}
+
+model SerialPart {
+  id          Int      @id @default(autoincrement())
+  serialId    Int
+  videoFileId String
+  partNumber  Int
+  title       String?
+  thumbnailUrl String?
+  seasonNumber Int?   @default(1)
+  episodeNumber Int?
+  createdAt   DateTime @default(now())
+  viewCount   Int      @default(0)
+  
+  // Relations
+  serial Video @relation(fields: [serialId], references: [id], onDelete: Cascade)
+  watchHistory WatchHistory[]
+  
+  @@map("serial_parts")
+}
+
+model WatchHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  videoId   Int
+  serialPartId Int?
+  watchedAt DateTime @default(now())
+  progress  Float    @default(0) // Progress dalam detik
+  duration  Float?   // Total durasi video
+  completed Boolean  @default(false) // Apakah video sudah selesai ditonton
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  serialPart SerialPart? @relation(fields: [serialPartId], references: [id])
+  
+  @@unique([userId, videoId, serialPartId])
+  @@map("watch_history")
+}
+
+model UserPreference {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  theme       String?  @default("light") // light, dark
+  language    String?  @default("id")
+  quality     String?  @default("auto") // auto, 720p, 1080p
+  autoplay    Boolean  @default(true)
+  notifications Boolean @default(true)
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("user_preferences")
+}
+
+model VideoLike {
+  id        String   @id @default(cuid())
+  userId    String
+  videoId   Int
+  likedAt   DateTime @default(now())
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, videoId])
+  @@map("video_likes")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  userId    String
+  videoId   Int
+  content   String
+  parentId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+  
+  @@map("comments")
+}
+
+enum VideoStatus {
+  DRAFT
+  PUBLISH
+  DONE
+}
+
+enum VideoCategory {
+  DRAMA_PENDEK
+  FILM
+  SERIAL
+  KARTUN
+}
+
+enum VideoSource {
+  TELEGRAM
+  WEBSITE
+}
